@@ -1,5 +1,19 @@
+# Python
 .venv/
-build/
+venv/
+__pycache__/
+.ipynb_checkpoints
 
+# Cython
+build/
 **.c
 **.pyd
+
+# Pytorch 
+**.ckpt
+**.pt
+
+# Others
+.vscode
+.DS_Store
+.env
