@@ -12,6 +12,8 @@ build/
 # Pytorch 
 **.ckpt
 **.pt
+**.pth
+training/
 
 # Others
 .vscode

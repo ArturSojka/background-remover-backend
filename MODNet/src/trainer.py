@@ -80,7 +80,7 @@ class GaussianBlurLayer(nn.Module):
 # MODNet Training Functions
 # ----------------------------------------------------------------------------------
 
-blurer = GaussianBlurLayer(1, 3).cuda()
+blurer = GaussianBlurLayer(1, 3)#.cuda()
 
 
 def supervised_training_iter(
@@ -175,7 +175,7 @@ def supervised_training_iter(
 
 
 def soc_adaptation_iter(
-    modnet, backup_modnet, optimizer, image,
+    modnet, backup_modnet, optimizer, image, device,
     soc_semantic_scale=100.0, soc_detail_scale=1.0):
     """ Self-Supervised sub-objective consistency (SOC) adaptation iteration of MODNet
     This function fine-tunes MODNet for one iteration in an unlabeled dataset.
@@ -259,7 +259,7 @@ def soc_adaptation_iter(
         sample_np_boundaries[np.where(dilated - eroded != 0)] = 1
         np_boundaries[sdx, 0, ...] = sample_np_boundaries
 
-    boundaries = torch.tensor(np_boundaries).float().cuda()
+    boundaries = torch.tensor(np_boundaries).float().to(device)
 
     # sub-objectives consistency between `pred_semantic` and `pred_matte`
     # generate pseudo ground truth for `pred_semantic`

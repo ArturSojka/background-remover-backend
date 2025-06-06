@@ -1,4 +1,4 @@
-# Backend for background removal project
+# Backend and model training code for background removal project
 
 ## Setup
 
