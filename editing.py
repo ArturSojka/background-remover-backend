@@ -1,11 +1,19 @@
 import numpy as np
 from PIL import Image, ImageFilter, ImageColor
 import cv2
+from foreground_estimation import estimate_foreground
 
 def edit(img: Image.Image, alpha: Image.Image, settings: dict, bg = None) -> Image.Image:
     """
     Edit the image based on the options
     """
+    
+    if settings['blendingMethod'] == 'advanced':
+        img_arr = np.array(img,dtype=np.float32)/255.0
+        alpha_arr = np.array(alpha,dtype=np.float32)/255.0
+        img, _ = estimate_foreground(img_arr, alpha_arr)
+        img = Image.fromarray((img*255.0).astype(np.uint8))
+    
     img = img.convert("RGBA")
     orig_width, orig_height = img.size
 
