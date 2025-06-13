@@ -17,7 +17,6 @@ def edit(img: Image.Image, alpha: Image.Image, settings: dict, bg = None) -> Ima
     img = img.convert("RGBA")
     orig_width, orig_height = img.size
 
-    # Create foreground with transparency
     img_np = np.array(img)
     img_np[:, :, 3] = np.array(alpha)
     foreground = Image.fromarray(img_np)
@@ -26,7 +25,6 @@ def edit(img: Image.Image, alpha: Image.Image, settings: dict, bg = None) -> Ima
     blur = settings["background"].get("blur", False)
     bg_color = settings["background"].get("color", "#ffffff")
 
-    # TODO: Maybe move to separate function
     if bg_type == "none":
         background = Image.new("RGBA", (orig_width, orig_height), (0, 0, 0, 0))
     elif bg_type == "color":
@@ -40,7 +38,6 @@ def edit(img: Image.Image, alpha: Image.Image, settings: dict, bg = None) -> Ima
         background = bg.convert("RGBA")
         bg_width, bg_height = background.size
 
-        # Resize foreground to fit background
         aspect_ratio = orig_width / orig_height
         if bg_width / bg_height > aspect_ratio:
             new_height = bg_height
@@ -64,7 +61,6 @@ def edit(img: Image.Image, alpha: Image.Image, settings: dict, bg = None) -> Ima
 
     background = add_effects(background, alpha, settings["effect"])
 
-    # TODO: Add foreground_estimation
     result = Image.alpha_composite(background, foreground)
     return result
 
@@ -78,7 +74,6 @@ def add_effects(background, alpha, effect, offset=(0, 0)) -> Image.Image:
     color = effect.get("color", "#000000")
     color_rgb = ImageColor.getrgb(color)
 
-    # TODO: Maybe add option for thickness
     mask = (np.array(alpha) > 0).astype(np.uint8) * 255
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
     dilated = cv2.dilate(mask, kernel)
@@ -88,7 +83,5 @@ def add_effects(background, alpha, effect, offset=(0, 0)) -> Image.Image:
     effect_img = Image.new("RGBA", (w, h), color_rgb + (255,))
     effect_mask = Image.fromarray(dilated).convert("L")
     
-    # TODO: Add effect["type"] == "shadow"
-
     background.paste(effect_img, offset, effect_mask)
     return background

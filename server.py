@@ -10,10 +10,9 @@ from editing import edit
 
 app = FastAPI()
 
-# Allow CORS for your React app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this to your domain for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,7 +29,7 @@ app.add_middleware(
 #       image: File | null
 #     },
 #     effect: {
-#       type: 'none' | 'border' | 'shadow',
+#       type: 'none' | 'border',
 #       color: '#000000'
 #     },
 #     blendingMethod: 'simple' | 'advanced'
@@ -47,25 +46,21 @@ async def remove_background(
         raise HTTPException(status_code=400, detail="Invalid image file type")
 
     try:
-        # Parse settings JSON
         settings_dict = json.loads(settings)
 
-        # Load original image
         image_bytes = await image.read()
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        # Load optional background image
         bg_img = None
         if backgroundImage:
             bg_bytes = await backgroundImage.read()
             bg_img = Image.open(io.BytesIO(bg_bytes)).convert("RGB")
         
-        alpha = infer_image(img)
+        alpha = infer_image(img, settings_dict['aiModel']=='custom')
         alpha = Image.fromarray(((alpha * 255).astype('uint8')), mode='L')
 
         result_img = edit(img, alpha, settings_dict, bg_img)
 
-        # Save result to bytes
         img_byte_arr = io.BytesIO()
         result_img.save(img_byte_arr, format='PNG')
         img_byte_arr.seek(0)

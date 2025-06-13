@@ -16,18 +16,26 @@ im_transform = transforms.Compose(
 
 modnet = MODNet(backbone_pretrained=False)
 modnet = nn.DataParallel(modnet)
+our_modnet = MODNet(backbone_pretrained=False)
+our_modnet = nn.DataParallel(our_modnet)
 
 if torch.cuda.is_available():
     modnet = modnet.cuda()
     weights = torch.load("MODNet/pretrained/modnet_photographic_portrait_matting.ckpt")
+    our_weights = torch.load("MODNet/pretrained/best_supervised.pth")
+    # weights = torch.load("MODNet/pretrained/last_self_supervised.pth")
 else:
     weights = torch.load("MODNet/pretrained/modnet_photographic_portrait_matting.ckpt", map_location=torch.device('cpu'))
+    our_weights = torch.load("MODNet/pretrained/best_supervised.pth", map_location=torch.device('cpu'))
+    # weights = torch.load("MODNet/pretrained/last_self_supervised.pth", map_location=torch.device('cpu'))
 modnet.load_state_dict(weights)
+modnet.eval()
+our_modnet.load_state_dict(our_weights)
 modnet.eval()
 ref_size = 512
 
 # Code adapted from MODNet/demo/image_matting/colab/inference.py
-def infer_image(im: Image.Image) -> np.ndarray:
+def infer_image(im: Image.Image, use_our=False) -> np.ndarray:
     """
     Infer the alpha matte with MODNet.
     
@@ -42,14 +50,10 @@ def infer_image(im: Image.Image) -> np.ndarray:
     elif im.shape[2] == 4:
         im = im[:, :, 0:3]
 
-    # convert image to PyTorch tensor
     im = Image.fromarray(im)
     im = im_transform(im)
-
-    # add mini-batch dim
     im = im[None, :, :, :]
 
-    # resize image for input
     im_b, im_c, im_h, im_w = im.shape
     if max(im_h, im_w) < ref_size or min(im_h, im_w) > ref_size:
         if im_w >= im_h:
@@ -66,13 +70,11 @@ def infer_image(im: Image.Image) -> np.ndarray:
     im_rh = im_rh - im_rh % 32
     im = F.interpolate(im, size=(im_rh, im_rw), mode='area')
 
-    # inference
-    _, _, matte = modnet(im.cuda() if torch.cuda.is_available() else im, True)
+    if use_our:
+        _, _, matte = our_modnet(im.cuda() if torch.cuda.is_available() else im, True)
+    else:
+        _, _, matte = modnet(im.cuda() if torch.cuda.is_available() else im, True)
 
-    # resize and save matte
     matte = F.interpolate(matte, size=(im_h, im_w), mode='area')
     matte = matte[0][0].data.cpu().numpy()
     return matte
-
-# TODO: Add video inference based on MODNet/demo/video_matting/custom/run.py
-# Optionally add the OFD trick as described in the MODNet paper (https://arxiv.org/pdf/2011.11961v4 page 7)
